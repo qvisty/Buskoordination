@@ -1015,6 +1015,28 @@
       margin-bottom: 10px;
     }
 
+    .guide-heading {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--blue);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .guide-list {
+      padding-left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .guide-list li {
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--text);
+    }
+
     .narr-text {
       font-size: 15px;
       line-height: 1.65;
@@ -1350,60 +1372,104 @@
 
   <!-- ── VEJLEDNING ─────────────────────────────────── -->
   <div id="view-vejledning" class="app-view">
-    <div class="school-page-content" style="max-width:640px">
+    <div class="school-page-content" style="max-width:680px">
+
       <div class="school-page-header">
         <div class="school-page-dot" style="background:#1a3a5c"></div>
         <div>
           <div class="school-page-name">Vejledning</div>
-          <div class="school-page-sub">Kort introduktion til værktøjet</div>
+          <div class="school-page-sub">Introduktion til busfordelingsværktøjet</div>
         </div>
       </div>
 
       <div class="narr-section">
-        <div class="narr-section-title">Hvad er dette?</div>
+        <div class="guide-heading">Baggrund</div>
         <p class="narr-text">
-          Vi har lavet et digitalt værktøj, der gør det nemt at regne på, hvad fælles buskørsel
-          koster os hver især. Man logger ind med en kode, justerer tre skydere -
-          <strong>elevtal</strong>, <strong>buspris</strong> og <strong>fordelingsnøgle</strong> -
-          og ser med det samme, hvad hver skole betaler og tjener på en tur.
+          Vi kører allerede sammen, men vi mangler et fælles redskab til at afklare, hvordan
+          udgifterne skal fordeles retfærdigt. Skal alle betale det samme uanset elevtal? Eller
+          skal dem med flest elever betale mere? Dette værktøj gør det muligt at lege med begge
+          yderpunkter — og alt derimellem.
         </p>
       </div>
 
       <div class="narr-section">
-        <div class="narr-section-title">Fordelingsnøglen</div>
+        <div class="guide-heading">Login og adgang</div>
         <p class="narr-text">
-          Skyderen øverst til venstre er det centrale valg: den bestemmer, om busprisen deles
-          <strong>ligeligt</strong> uanset elevtal, <strong>efter elevtal</strong>, eller et sted
-          derimellem. Tallene opdateres i realtid, så man kan se konsekvensen med det samme.
+          Siden åbner med en adgangskodeskærm. Det holder værktøjet internt og giver os ro til at
+          eksperimentere uden at noget er offentligt synligt.
         </p>
       </div>
 
       <div class="narr-section">
-        <div class="narr-section-title">Skoleregnskaberne</div>
-        <p class="narr-text">
-          Øverst i menuen er der en side pr. skole. Her gennemgås regnestykket i klart sprog:
-          hvad betaler vi, hvad tjener vi, og hvad er bundlinjen - både pr. tur og for hele
-          skoleåret.
+        <div class="guide-heading">Forsiden — indstillinger og øjeblikkelig feedback</div>
+        <p class="narr-text" style="margin-bottom:12px">Til venstre finder man alle indstillingerne:</p>
+        <ul class="guide-list">
+          <li><strong>Elevtal pr. skole</strong> — tre skydere, én pr. skole, fra 0 til 40 elever. Standard er sat til vores forventede elevtal: HE 10, HD 20, EE 5.</li>
+          <li><strong>Buspris pr. tur</strong> — hvad koster bussen for en enkelt tur (0–10.000 kr).</li>
+          <li><strong>Pris pr. elev</strong> — hvad opkræver vi hos eleverne (0–150 kr, standard 65 kr).</li>
+          <li><strong>Fordelingsnøgle</strong> — skyderens nøglefunktion. Venstre = alt fordeles efter elevtal. Højre = alt deles ligeligt. 50% betyder, at halvdelen af busprisen deles i tre lige dele, og den anden halvdel fordeles efter elevtal. Under skyderen vises præcis, hvad de to dele udgør i kroner.</li>
+        </ul>
+        <p class="narr-text" style="margin-top:12px">Til højre opdateres fire nøgletal, to diagrammer og en tabel i realtid:</p>
+        <ul class="guide-list" style="margin-top:8px">
+          <li>Et <strong>søjlediagram</strong> stiller betaling (busandel) op mod elevindtægt pr. skole, så man kan se, hvem der er i plus og hvem der er i minus.</li>
+          <li>Et <strong>Marimekko-diagram</strong> (opdelt rektangel) viser udgiftsfordelingen visuelt — bredden viser den ens del kontra elevbaserede del, og højden viser den enkelte skoles andel.</li>
+          <li><strong>Nettobadges</strong> under søjlediagrammet viser overskud/underskud pr. skole med et link til den pågældende skoles regnskabsside.</li>
+        </ul>
+      </div>
+
+      <div class="narr-section">
+        <div class="guide-heading">Skoleregnskabssiderne</div>
+        <p class="narr-text" style="margin-bottom:12px">
+          For hver skole er der en dedikeret side tilgængelig via topmenuen. Her gennemgås
+          regnestykket i almindeligt sprog:
+        </p>
+        <ul class="guide-list">
+          <li>Hvad koster bussen i alt, og hvad er vores andel ifølge fordelingsnøglen?</li>
+          <li>Præcis udregning af den ens del og den elevbaserede del med faktiske kronebeløb.</li>
+          <li>Elevindtægt: hvad vi opkræver gange antal elever.</li>
+          <li>Nettoresultat: overskud eller underskud på turen.</li>
+        </ul>
+        <p class="narr-text" style="margin-top:12px">
+          Nederst på siden følger et <strong>årsregnskab</strong> baseret på simuleringen: samlet
+          busandel, samlet elevindtægt og årets netto — plus hvor mange ture vi i gennemsnit havde
+          elever med, og hvor mange ture vi slet ingen elever sendte.
         </p>
       </div>
 
       <div class="narr-section">
-        <div class="narr-section-title">Skoleårssimuleringen</div>
-        <p class="narr-text">
-          Under <strong>Skoleår 2026/27</strong> simuleres alle fredags- og søndagskørsler fra
-          august 2026 til juni 2027 - ferier og helligdage er automatisk sorteret fra. Elevtallet
-          varierer realistisk fra tur til tur, og nogle få ture har en skole nul elever med.
-          Tryk <strong>Ny simulering</strong> for at se et nyt scenarie.
+        <div class="guide-heading">Skoleårssimuleringen</div>
+        <p class="narr-text" style="margin-bottom:12px">
+          Her simuleres hele skoleåret på én gang. Systemet genererer automatisk alle fredage og
+          søndage fra 10. august 2026 til 26. juni 2027 og fratrækker ferier og helligdage
+          (efterårsferie, juleferie, vinterferie, påske, Kristi Himmelfartsdag, pinse, grundlovsdag
+          og sommerferie). Det giver et nøjagtigt antal ture.
+        </p>
+        <p class="narr-text" style="margin-bottom:12px">
+          For at gøre simuleringen realistisk varierer elevtallet fra tur til tur:
+        </p>
+        <ul class="guide-list">
+          <li>Op til <strong>25% flere elever</strong> end forventet på gode ture.</li>
+          <li>Op til <strong>50% færre elever</strong> på rolige ture.</li>
+          <li>Nogle få ture om året har en skole <strong>nul elever</strong> med — for eksempel weekender, hvor eleverne er hjemme.</li>
+        </ul>
+        <p class="narr-text" style="margin-top:12px">
+          Tabellen er opdelt pr. måned og kan foldes ud, så man kan se de individuelle ture med
+          faktiske elevtal og betalinger. Årssammenfatningen øverst viser totaler for alle skoler.
+          Tryk <strong>Ny simulering</strong> for at køre et nyt tilfældigt scenarie — det er
+          nyttigt til at forstå, hvilken spredning man kan forvente.
         </p>
       </div>
 
       <div class="narr-section" style="border-bottom:none">
-        <div class="narr-section-title">Adgang</div>
+        <div class="guide-heading">Praktisk</div>
         <p class="narr-text">
-          Siden kræver en adgangskode og virker i enhver browser på computer, tablet og mobil.
-          Ingen data sendes nogen steder - alt beregnes lokalt i browseren.
+          Siden ligger fast på
+          <strong>qvisty.github.io/Buskoordination</strong> og virker i enhver browser på
+          computer, tablet og mobil. Ingen installation, ingen data sendes nogen steder — alt
+          beregnes lokalt i browseren.
         </p>
       </div>
+
     </div>
   </div>
 
