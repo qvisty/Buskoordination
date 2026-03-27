@@ -632,6 +632,7 @@
       scrollbar-width: none;
     }
     #top-nav::-webkit-scrollbar { display: none; }
+    #top-nav .spacer { flex: 1; }
 
     .nav-btn {
       background: none;
@@ -1148,6 +1149,8 @@
       <span class="nav-dot" style="background:var(--colC)"></span>
       <span id="nav-name-2">Emmerske Efterskole</span>
     </button>
+    <div class="spacer"></div>
+    <button class="nav-btn" id="nav-vejledning" onclick="showView('vejledning')">Vejledning</button>
   </nav>
 
   <div id="view-main" class="app-view active">
@@ -1343,6 +1346,65 @@
   <!-- ── SIMULATION PAGE ───────────────────────────── -->
   <div id="view-simulation" class="app-view">
     <div class="sim-content" id="sim-content"></div>
+  </div>
+
+  <!-- ── VEJLEDNING ─────────────────────────────────── -->
+  <div id="view-vejledning" class="app-view">
+    <div class="school-page-content" style="max-width:640px">
+      <div class="school-page-header">
+        <div class="school-page-dot" style="background:#1a3a5c"></div>
+        <div>
+          <div class="school-page-name">Vejledning</div>
+          <div class="school-page-sub">Kort introduktion til værktøjet</div>
+        </div>
+      </div>
+
+      <div class="narr-section">
+        <div class="narr-section-title">Hvad er dette?</div>
+        <p class="narr-text">
+          Vi har lavet et digitalt værktøj, der gør det nemt at regne på, hvad fælles buskørsel
+          koster os hver især. Man logger ind med en kode, justerer tre skydere —
+          <strong>elevtal</strong>, <strong>buspris</strong> og <strong>fordelingsnøgle</strong> —
+          og ser med det samme, hvad hver skole betaler og tjener på en tur.
+        </p>
+      </div>
+
+      <div class="narr-section">
+        <div class="narr-section-title">Fordelingsnøglen</div>
+        <p class="narr-text">
+          Skyderen øverst til venstre er det centrale valg: den bestemmer, om busprisen deles
+          <strong>ligeligt</strong> uanset elevtal, <strong>efter elevtal</strong>, eller et sted
+          derimellem. Tallene opdateres i realtid, så man kan se konsekvensen med det samme.
+        </p>
+      </div>
+
+      <div class="narr-section">
+        <div class="narr-section-title">Skoleregnskaberne</div>
+        <p class="narr-text">
+          Øverst i menuen er der en side pr. skole. Her gennemgås regnestykket i klart sprog:
+          hvad betaler vi, hvad tjener vi, og hvad er bundlinjen — både pr. tur og for hele
+          skoleåret.
+        </p>
+      </div>
+
+      <div class="narr-section">
+        <div class="narr-section-title">Skoleårssimuleringen</div>
+        <p class="narr-text">
+          Under <strong>Skoleår 2026/27</strong> simuleres alle fredags- og søndagskørsler fra
+          august 2026 til juni 2027 — ferier og helligdage er automatisk sorteret fra. Elevtallet
+          varierer realistisk fra tur til tur, og nogle få ture har en skole nul elever med.
+          Tryk <strong>Ny simulering</strong> for at se et nyt scenarie.
+        </p>
+      </div>
+
+      <div class="narr-section" style="border-bottom:none">
+        <div class="narr-section-title">Adgang</div>
+        <p class="narr-text">
+          Siden kræver en adgangskode og virker i enhver browser på computer, tablet og mobil.
+          Ingen data sendes nogen steder — alt beregnes lokalt i browseren.
+        </p>
+      </div>
+    </div>
   </div>
 
 </div><!-- /app -->
@@ -1749,7 +1811,8 @@
 
     // highlight correct nav button
     const map = { 'main': 'nav-forside', 'simulation': 'nav-skolear',
-                  'school-0': 'nav-school-0', 'school-1': 'nav-school-1', 'school-2': 'nav-school-2' };
+                  'school-0': 'nav-school-0', 'school-1': 'nav-school-1', 'school-2': 'nav-school-2',
+                  'vejledning': 'nav-vejledning' };
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('nav-active'));
     const target = map[id];
     if (target) document.getElementById(target).classList.add('nav-active');
