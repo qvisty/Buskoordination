@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buskoordination – Danmarkskort</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+    }
+
+    header {
+      background: #1a3a5c;
+      color: white;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    header .bus-icon { font-size: 28px; }
+
+    header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    header p {
+      font-size: 13px;
+      opacity: 0.75;
+      margin-top: 2px;
+    }
+
+    header .spacer { flex: 1; }
+
+    #export-btn {
+      background: rgba(255,255,255,0.15);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.35);
+      border-radius: 6px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+
+    #export-btn:hover { background: rgba(255,255,255,0.25); }
+
+    #map {
+      width: 100%;
+      height: calc(100vh - 70px);
+    }
+
+    /* Location label tooltip */
+    .leaflet-tooltip.loc-label {
+      background: white;
+      border: none;
+      border-radius: 5px;
+      padding: 4px 9px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #1a3a5c;
+      white-space: nowrap;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+      pointer-events: none;
+    }
+
+    /* Remove default tooltip arrow */
+    .leaflet-tooltip.loc-label::before { display: none; }
+
+    /* Popup */
+    .leaflet-popup-content-wrapper {
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      border: none;
+    }
+
+    .leaflet-popup-tip-container { display: none; }
+
+    .popup-content {
+      text-align: center;
+      padding: 6px 10px 2px;
+    }
+
+    .popup-content .popup-icon { font-size: 22px; }
+
+    .popup-content h3 {
+      font-size: 15px;
+      color: #1a3a5c;
+      margin: 5px 0 2px;
+      font-weight: 700;
+    }
+
+    .popup-content p {
+      font-size: 12px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <span class="bus-icon">🚌</span>
+    <div>
+      <h1>Buskoordination</h1>
+      <p>Koordineringssteder i Danmark</p>
+    </div>
+    <div class="spacer"></div>
+    <button id="export-btn" onclick="exportPNG()">⬇ Gem som billede</button>
+  </header>
+
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script>
+    const steder = [
+      { navn: "Brabrand",    lat: 56.150, lng: 10.100 },
+      { navn: "Helsingør",   lat: 56.036, lng: 12.614 },
+      { navn: "Hobro",       lat: 56.642, lng:  9.793 },
+      { navn: "Humlebæk",    lat: 55.967, lng: 12.533 },
+      { navn: "København",   lat: 55.676, lng: 12.568 },
+      { navn: "Lynge",       lat: 55.867, lng: 12.133 },
+      { navn: "Middelfart",  lat: 55.504, lng:  9.729 },
+      { navn: "Silkeborg",   lat: 56.150, lng:  9.550 },
+      { navn: "Skovlunde",   lat: 55.717, lng: 12.367 },
+      { navn: "Stevns",      lat: 55.317, lng: 12.367 },
+      { navn: "Tønder",      lat: 54.933, lng:  8.867 },
+      { navn: "Varde",       lat: 55.624, lng:  8.482 },
+      { navn: "Vejle",       lat: 55.709, lng:  9.536 },
+      { navn: "Viborg",      lat: 56.453, lng:  9.402 },
+      { navn: "Ølsted",      lat: 55.917, lng: 12.083 },
+      { navn: "Østerbro",    lat: 55.700, lng: 12.580 },
+      { navn: "Århus",       lat: 56.163, lng: 10.204 },
+    ];
+
+    const map = L.map('map', {
+      center: [56.0, 10.5],
+      zoom: 7,
+      zoomControl: true,
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+      maxZoom: 19,
+    }).addTo(map);
+
+    steder.forEach(sted => {
+      const marker = L.circleMarker([sted.lat, sted.lng], {
+        radius: 8,
+        fillColor: '#e8530a',
+        color: '#fff',
+        weight: 2.5,
+        fillOpacity: 1,
+        opacity: 1,
+      }).addTo(map);
+
+      marker.bindTooltip(sted.navn, {
+        permanent: true,
+        direction: 'top',
+        offset: [0, -6],
+        className: 'loc-label',
+      });
+
+      marker.bindPopup(`
+        <div class="popup-content">
+          <div class="popup-icon">🚌</div>
+          <h3>${sted.navn}</h3>
+          <p>Koordineringssted</p>
+        </div>
+      `, { maxWidth: 180 });
+    });
+
+    function exportPNG() {
+      const btn = document.getElementById('export-btn');
+      btn.textContent = '⏳ Eksporterer…';
+      btn.disabled = true;
+
+      html2canvas(document.getElementById('map'), {
+        useCORS: true,
+        allowTaint: true,
+        scale: 2,
+      }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = 'buskoordination-kort.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        btn.innerHTML = '⬇ Gem som billede';
+        btn.disabled = false;
+      }).catch(() => {
+        btn.innerHTML = '⬇ Gem som billede';
+        btn.disabled = false;
+        alert('Kortfliserne blokerer eksporten pga. CORS. Prøv at tage et skærmbillede (F12 → Capture screenshot).');
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,2291 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Busfordeling – Efterskoler</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:       #1a3a5c;
+      --blue2:      #2d5f8a;
+      --orange:     #e8530a;
+      --green:      #1a7a4a;
+      --red:        #c0392b;
+      --bg:         #f0f4f8;
+      --card:       #ffffff;
+      --border:     #dde3ea;
+      --dist-color: #e05252;
+      --text:    #1e293b;
+      --muted:   #64748b;
+      --colA:    #3b82f6;
+      --colB:    #f97316;
+      --colC:    #10b981;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── LOGIN OVERLAY ─────────────────────────────── */
+    #login-overlay {
+      position: fixed; inset: 0;
+      background: linear-gradient(135deg, #1a3a5c 0%, #2d5f8a 100%);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999;
+    }
+
+    #login-box {
+      background: white;
+      border-radius: 16px;
+      padding: 48px 40px;
+      width: 360px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    #login-box .bus { font-size: 48px; margin-bottom: 12px; }
+    #login-box h2 { font-size: 22px; color: var(--blue); margin-bottom: 4px; }
+    #login-box p  { font-size: 14px; color: var(--muted); margin-bottom: 28px; }
+
+    #login-box input[type="password"] {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 16px;
+      text-align: center;
+      letter-spacing: 4px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    #login-box input[type="password"]:focus { border-color: var(--blue2); }
+
+    #login-btn {
+      width: 100%;
+      margin-top: 14px;
+      padding: 12px;
+      background: var(--blue);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    #login-btn:hover { background: var(--blue2); }
+
+    #login-error {
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--red);
+      min-height: 18px;
+    }
+
+    @keyframes shake {
+      0%,100%{ transform: translateX(0); }
+      20%    { transform: translateX(-8px); }
+      40%    { transform: translateX(8px); }
+      60%    { transform: translateX(-6px); }
+      80%    { transform: translateX(6px); }
+    }
+    .shake { animation: shake 0.4s ease; }
+
+    /* ── HEADER ────────────────────────────────────── */
+    header {
+      background: var(--blue);
+      color: white;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+
+    header .icon { font-size: 26px; }
+    header h1    { font-size: 19px; font-weight: 700; }
+    header .sub  { font-size: 12px; opacity: 0.7; margin-top: 1px; }
+    header .spacer { flex: 1; }
+
+    #logout-btn {
+      background: rgba(255,255,255,0.12);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    #logout-btn:hover { background: rgba(255,255,255,0.22); }
+
+    /* ── MAIN LAYOUT ───────────────────────────────── */
+    #app { display: none; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 0;
+      min-height: calc(100vh - 58px);
+    }
+
+    /* ── LEFT PANEL ────────────────────────────────── */
+    .left-panel {
+      background: white;
+      border-right: 1px solid var(--border);
+      padding: 24px 20px;
+      overflow-y: auto;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      margin-bottom: 14px;
+      margin-top: 24px;
+    }
+    .section-title:first-child { margin-top: 0; }
+
+    /* school sliders */
+    .school-slider { margin-bottom: 20px; }
+
+    .school-slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .school-slider input[type="text"] {
+      flex: 1;
+      padding: 7px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 7px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+      min-width: 0;
+    }
+    .school-slider input[type="text"]:focus { border-color: var(--blue2); }
+
+    .school-slider.a input[type="text"] { border-left: 3px solid var(--colA); }
+    .school-slider.b input[type="text"] { border-left: 3px solid var(--colB); }
+    .school-slider.c input[type="text"] { border-left: 3px solid var(--colC); }
+
+    .school-slider.a input[type="range"]::-webkit-slider-thumb { background: var(--colA); }
+    .school-slider.b input[type="range"]::-webkit-slider-thumb { background: var(--colB); }
+    .school-slider.c input[type="range"]::-webkit-slider-thumb { background: var(--colC); }
+
+    /* sliders */
+    .slider-group { margin-bottom: 18px; }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px;
+    }
+
+    .slider-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .slider-value {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--blue);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      -webkit-appearance: none;
+      height: 6px;
+      border-radius: 4px;
+      background: var(--border);
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--blue);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+      cursor: pointer;
+    }
+
+    .distribution-visual {
+      display: flex;
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .dist-common   { background: var(--dist-color); transition: width 0.2s; }
+    .dist-variable { background: #e2e8f0; transition: width 0.2s; }
+
+    .dist-breakdown {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .dist-part {
+      border-radius: 7px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .dist-part.ens { background: #eef2ff; border: 1px solid #c7d2fe; }
+    .dist-part.var { background: #f8fafc; border: 1px solid var(--border); }
+
+    .dist-part-pct {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--blue);
+    }
+
+    .dist-part.ens .dist-part-pct { color: var(--dist-color); }
+
+    .dist-part-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+    }
+
+    .dist-part-kr {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      margin-top: 3px;
+    }
+
+    .fordel-hint {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    /* ── RIGHT PANEL ───────────────────────────────── */
+    .right-panel {
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    /* metric cards */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 18px 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .card .card-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .card .card-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--blue);
+    }
+
+    .card.balance .card-value.positive { color: var(--green); }
+    .card.balance .card-value.negative { color: var(--red); }
+
+    /* charts row */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 16px;
+      margin-bottom: 24px;
+      align-items: stretch;
+    }
+
+    .chart-card {
+      background: white;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .chart-card h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+    }
+
+    .chart-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .legend-swatch {
+      display: inline-block;
+      width: 14px; height: 10px;
+      border-radius: 3px;
+      vertical-align: middle;
+    }
+
+    .legend-swatch.solid   { background: rgba(59,130,246,0.8); }
+    .legend-swatch.outline { background: rgba(59,130,246,0.12); border: 2px solid #3b82f6; }
+
+    .bar-netto {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+      justify-content: space-around;
+    }
+
+    .netto-badge {
+      flex: 1;
+      text-align: center;
+      border-radius: 8px;
+      padding: 8px 6px;
+    }
+
+    .netto-badge .nb-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .netto-badge .nb-elev {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .netto-badge .nb-val {
+      font-size: 15px;
+      font-weight: 800;
+      margin-top: 3px;
+    }
+
+    .netto-badge .nb-label {
+      font-size: 10px;
+      font-weight: 500;
+      margin-top: 1px;
+      opacity: 0.8;
+    }
+
+    .netto-badge.pos { background: #f0fdf4; }
+    .netto-badge.pos .nb-val { color: var(--green); }
+    .netto-badge.pos .nb-label { color: var(--green); }
+    .netto-badge.neg { background: #fff5f5; }
+    .netto-badge.neg .nb-val { color: var(--red); }
+    .netto-badge.neg .nb-label { color: var(--red); }
+
+    .chart-wrap { position: relative; }
+    .chart-wrap.bar  { height: 200px; }
+    .chart-wrap.pie  { height: 200px; }
+
+    /* results table */
+    .table-card {
+      background: white;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .table-card h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    thead th {
+      padding: 10px 16px;
+      text-align: right;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border);
+    }
+
+    thead th:first-child { text-align: left; }
+
+    tbody td {
+      padding: 13px 16px;
+      text-align: right;
+      border-bottom: 1px solid #f1f5f9;
+      font-weight: 500;
+    }
+
+    tbody td:first-child { text-align: left; font-weight: 700; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .school-dot {
+      display: inline-block;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      margin-right: 7px;
+      vertical-align: middle;
+    }
+
+    .net-positive { color: var(--green); font-weight: 700; }
+    .net-negative { color: var(--red);   font-weight: 700; }
+
+    tfoot td {
+      padding: 13px 16px;
+      text-align: right;
+      font-weight: 700;
+      background: #f8fafc;
+      border-top: 2px solid var(--border);
+      font-size: 14px;
+    }
+    tfoot td:first-child { text-align: left; color: var(--muted); }
+
+    /* ── MARIMEKKO ─────────────────────────────────── */
+    .mm-outer { font-size: 13px; }
+
+    .mm-header-row,
+    .mm-footer-row,
+    .mm-body {
+      display: flex;
+      align-items: stretch;
+    }
+
+    /* column labels row (above the box) */
+    .mm-col-head {
+      flex: 1;
+      padding: 6px 10px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    .mm-col-head.ens { color: var(--dist-color); }
+    .mm-col-head.var { color: var(--muted); }
+
+    /* the bordered rectangle box */
+    .mm-rect-box {
+      flex: 1;
+      display: flex;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .mm-labels-col {
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      padding-right: 12px;
+    }
+
+    .mm-label {
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .mm-label:last-child { border-bottom: none; }
+
+    .mm-data-col {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .mm-data-col.var { border-left: 3px dashed var(--dist-color); }
+
+    .mm-cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      border-bottom: 2px solid white;
+      overflow: hidden;
+      text-align: center;
+    }
+
+    .mm-cell:last-child { border-bottom: none; }
+
+    .mm-cell.ens { background: #eef2ff; color: var(--dist-color); }
+    .mm-cell.var.c0 { background: #dbeafe; color: #1d4ed8; }
+    .mm-cell.var.c1 { background: #ffedd5; color: #c2410c; }
+    .mm-cell.var.c2 { background: #d1fae5; color: #065f46; }
+
+    /* sums to the right of the box */
+    .mm-sums-col {
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      margin-left: 10px;
+      border-left: 2px solid var(--border);
+      padding-left: 10px;
+    }
+
+    .mm-row-sum {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--blue);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .mm-row-sum:last-child { border-bottom: none; }
+
+    /* sums below the box */
+    .mm-footer-row { margin-top: 8px; border-top: 2px solid var(--border); padding-top: 8px; }
+
+    .mm-col-sum {
+      flex: 1;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .mm-col-sum.ens { color: var(--dist-color); }
+    .mm-col-sum.var { color: var(--muted); }
+
+    .mm-total-sum {
+      flex-shrink: 0;
+      text-align: right;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--blue);
+    }
+
+    /* ── TOP NAV ────────────────────────────────────── */
+    #top-nav {
+      background: white;
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      display: flex;
+      gap: 2px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    #top-nav::-webkit-scrollbar { display: none; }
+
+    .nav-btn {
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color 0.15s, border-color 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: -1px;
+    }
+
+    .nav-btn:hover { color: var(--blue); }
+
+    .nav-btn.nav-active {
+      color: var(--blue);
+      border-bottom-color: var(--blue);
+    }
+
+    .nav-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .nav-sep {
+      width: 1px;
+      background: var(--border);
+      margin: 8px 4px;
+      align-self: stretch;
+    }
+
+    /* ── VIEWS ─────────────────────────────────────── */
+    .app-view { display: none; }
+    .app-view.active { display: block; }
+
+    .view-back-bar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 24px;
+      background: white;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .back-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--blue);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .back-btn:hover { background: #f1f5f9; }
+
+    .view-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--blue);
+    }
+
+    /* ── SCHOOL PAGE ────────────────────────────────── */
+    .school-page-content {
+      max-width: 680px;
+      margin: 32px auto;
+      padding: 0 24px 48px;
+    }
+
+    .school-page-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .school-page-dot {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .school-page-name {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--blue);
+    }
+
+    .school-page-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* ── SIMULATION PAGE ────────────────────────────── */
+    .sim-content {
+      padding: 24px;
+    }
+
+    .sim-params-bar {
+      background: var(--blue);
+      color: white;
+      border-radius: 10px;
+      padding: 12px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-bottom: 24px;
+      font-size: 13px;
+    }
+
+    .sim-params-bar span { opacity: 0.8; }
+    .sim-params-bar strong { opacity: 1; }
+
+    .sim-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .sim-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+
+    .sim-card .sc-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    .sim-card .sc-val {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--blue);
+    }
+
+    .sim-card .sc-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .sim-section-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin: 24px 0 12px;
+    }
+
+    .sim-table-wrap {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      margin-bottom: 24px;
+    }
+
+    .sim-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .sim-table thead th {
+      background: #f8fafc;
+      padding: 10px 14px;
+      text-align: right;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .sim-table thead th:first-child { text-align: left; }
+
+    .sim-table tbody td {
+      padding: 11px 14px;
+      text-align: right;
+      border-bottom: 1px solid #f1f5f9;
+      font-weight: 500;
+    }
+    .sim-table tbody td:first-child { text-align: left; font-weight: 700; color: var(--blue); }
+    .sim-table tbody tr:last-child td { border-bottom: none; }
+    .sim-table tbody tr:hover { background: #fafbfc; }
+
+    .sim-table tfoot td {
+      padding: 12px 14px;
+      text-align: right;
+      font-weight: 700;
+      background: #f8fafc;
+      border-top: 2px solid var(--border);
+      font-size: 13px;
+    }
+    .sim-table tfoot td:first-child { text-align: left; color: var(--muted); }
+
+    .sim-net-pos { color: var(--green); font-weight: 700; }
+    .sim-net-neg { color: var(--red);   font-weight: 700; }
+
+    .month-summary-row { cursor: pointer; user-select: none; }
+    .month-summary-row:hover td { background: #f0f4f8; }
+    .month-summary-row td:first-child { font-weight: 700; color: var(--blue); }
+
+    .expand-icon {
+      display: inline-block;
+      width: 16px;
+      font-size: 10px;
+      color: var(--muted);
+      transition: transform 0.15s;
+    }
+
+    .trip-detail-row td {
+      background: #fafbfc;
+      color: var(--muted);
+      font-size: 12px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .trip-detail-row td:first-child { padding-left: 32px; font-weight: 500; }
+    .trip-detail-row:last-of-type td { border-bottom: 2px solid var(--border); }
+
+    .resim-btn {
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--blue);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .resim-btn:hover { background: #f1f5f9; border-color: var(--blue); }
+
+    .holiday-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .holiday-chip {
+      background: #fef9ec;
+      border: 1px solid #fcd34d;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      color: #92400e;
+    }
+
+    .sim-btn {
+      display: block;
+      width: 100%;
+      margin-top: 24px;
+      padding: 13px;
+      background: var(--blue);
+      color: white;
+      border: none;
+      border-radius: 9px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+      letter-spacing: 0.3px;
+    }
+    .sim-btn:hover { background: var(--blue2); }
+
+    /* ── SCHOOL MODAL ──────────────────────────────── */
+    #school-modal {
+      position: fixed; inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 8888;
+    }
+
+    .modal-backdrop {
+      position: absolute; inset: 0;
+      background: rgba(15,23,42,0.55);
+      backdrop-filter: blur(2px);
+    }
+
+    .modal-box {
+      position: relative;
+      background: white;
+      border-radius: 16px;
+      width: min(620px, 95vw);
+      max-height: 88vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 24px 18px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: white;
+      border-radius: 16px 16px 0 0;
+    }
+
+    .modal-school-dot {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .modal-school-name {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--blue);
+      flex: 1;
+    }
+
+    .modal-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .modal-close {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      width: 32px; height: 32px;
+      font-size: 16px;
+      cursor: pointer;
+      color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .modal-close:hover { background: #f1f5f9; }
+
+    .modal-body { padding: 24px; }
+
+    .narr-section {
+      margin-bottom: 22px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .narr-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+    .narr-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .narr-text {
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--text);
+    }
+
+    .narr-text strong { color: var(--blue); }
+
+    .narr-calc {
+      margin-top: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .narr-calc-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 16px;
+      padding: 10px 14px;
+      font-size: 14px;
+      border-bottom: 1px solid #f1f5f9;
+      background: #fafbfc;
+    }
+
+    .narr-calc-row:last-child { border-bottom: none; }
+
+    .narr-calc-row.ens-row { background: #f5f3ff; }
+    .narr-calc-row.var-row { background: white; }
+    .narr-calc-row.total-row {
+      background: white;
+      font-weight: 700;
+      font-size: 15px;
+      border-top: 2px solid var(--border);
+    }
+
+    .narr-calc-row .calc-label { color: var(--muted); flex: 1; }
+    .narr-calc-row .calc-val   { font-weight: 700; color: var(--blue); white-space: nowrap; }
+    .narr-calc-row.ens-row .calc-val { color: var(--dist-color); }
+
+    .narr-result-box {
+      border-radius: 10px;
+      border: 2px solid var(--border);
+      overflow: hidden;
+    }
+
+    .narr-result-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 11px 16px;
+      font-size: 15px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .narr-result-row:last-child { border-bottom: none; }
+    .narr-result-row.result-total {
+      font-weight: 800;
+      font-size: 17px;
+      background: #f8fafc;
+      border-top: 2px solid var(--border);
+    }
+
+    .narr-result-row .res-label { color: var(--muted); }
+    .res-pos { color: var(--green); font-weight: 700; }
+    .res-neg { color: var(--red); font-weight: 700; }
+
+    .open-modal-btn {
+      margin-top: 8px;
+      width: 100%;
+      background: none;
+      border: 1px solid currentColor;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.15s;
+    }
+    .open-modal-btn:hover { opacity: 1; }
+    .netto-badge.pos .open-modal-btn { color: var(--green); }
+    .netto-badge.neg .open-modal-btn { color: var(--red); }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .left-panel { border-right: none; border-bottom: 1px solid var(--border); }
+      .cards { grid-template-columns: repeat(2, 1fr); }
+      .charts-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── LOGIN ─────────────────────────────────────── -->
+<div id="login-overlay">
+  <div id="login-box">
+    <div class="bus">🚌</div>
+    <h2>Busfordeling</h2>
+    <p>Indtast adgangskode for at fortsætte</p>
+    <input type="password" id="pw-input" placeholder="••••••••" autocomplete="current-password">
+    <button id="login-btn" onclick="doLogin()">Log ind</button>
+    <div id="login-error"></div>
+  </div>
+</div>
+
+<!-- ── APP ───────────────────────────────────────── -->
+<div id="app">
+  <header>
+    <span class="icon">🚌</span>
+    <div>
+      <h1>Busfordeling – Efterskoler</h1>
+      <div class="sub">Fordelingsmodel for fælles buskørsel</div>
+    </div>
+    <div class="spacer"></div>
+    <button id="logout-btn" onclick="doLogout()">Log ud</button>
+  </header>
+
+  <nav id="top-nav">
+    <button class="nav-btn nav-active" id="nav-forside" onclick="showView('main')">Forside</button>
+    <div class="nav-sep"></div>
+    <button class="nav-btn" id="nav-skolear" onclick="openSimulation()">Skoleår 2026/27</button>
+    <div class="nav-sep"></div>
+    <button class="nav-btn" id="nav-school-0" onclick="openSchoolPage(0)">
+      <span class="nav-dot" style="background:var(--colA)"></span>
+      <span id="nav-name-0">Højer Efterskole</span>
+    </button>
+    <button class="nav-btn" id="nav-school-1" onclick="openSchoolPage(1)">
+      <span class="nav-dot" style="background:var(--colB)"></span>
+      <span id="nav-name-1">Højer Designefterskole</span>
+    </button>
+    <button class="nav-btn" id="nav-school-2" onclick="openSchoolPage(2)">
+      <span class="nav-dot" style="background:var(--colC)"></span>
+      <span id="nav-name-2">Emmerske Efterskole</span>
+    </button>
+  </nav>
+
+  <div id="view-main" class="app-view active">
+  <div class="layout">
+    <!-- LEFT: inputs -->
+    <div class="left-panel">
+      <div class="section-title">Skoler &amp; elevtal</div>
+
+      <div class="school-slider a">
+        <div class="school-slider-header">
+          <input type="text" id="name-a" value="Højer Efterskole" oninput="recalc()">
+          <span class="slider-value" id="val-elev-a">10 elever</span>
+        </div>
+        <input type="range" id="elev-a" min="0" max="40" step="1" value="10" oninput="recalc()">
+      </div>
+      <div class="school-slider b">
+        <div class="school-slider-header">
+          <input type="text" id="name-b" value="Højer Designefterskole" oninput="recalc()">
+          <span class="slider-value" id="val-elev-b">20 elever</span>
+        </div>
+        <input type="range" id="elev-b" min="0" max="40" step="1" value="20" oninput="recalc()">
+      </div>
+      <div class="school-slider c">
+        <div class="school-slider-header">
+          <input type="text" id="name-c" value="Emmerske Efterskole" oninput="recalc()">
+          <span class="slider-value" id="val-elev-c">5 elever</span>
+        </div>
+        <input type="range" id="elev-c" min="0" max="40" step="1" value="5" oninput="recalc()">
+      </div>
+
+      <div class="section-title">Turparametre</div>
+
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-label">Pris pr. tur (bus)</span>
+          <span class="slider-value" id="val-bus">3.000 kr</span>
+        </div>
+        <input type="range" id="s-bus" min="0" max="10000" step="100" value="3000"
+               oninput="recalc()">
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-label">Pris pr. elev (indtægt)</span>
+          <span class="slider-value" id="val-elev">65 kr</span>
+        </div>
+        <input type="range" id="s-elev" min="0" max="150" step="5" value="65"
+               oninput="recalc()">
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-label">Fordelingsnøgle</span>
+        </div>
+        <input type="range" id="s-fordel" min="0" max="100" step="5" value="50"
+               oninput="recalc()">
+        <p class="fordel-hint" style="margin-top:6px;margin-bottom:8px">
+          Venstre = mere efter elevtal · Højre = mere ligeligt · 100% = alle betaler ens
+        </p>
+        <div class="distribution-visual">
+          <div class="dist-common"   id="dist-common"   style="width:50%"></div>
+          <div class="dist-variable" id="dist-variable" style="width:50%"></div>
+        </div>
+        <div class="dist-breakdown">
+          <div class="dist-part ens">
+            <span class="dist-part-pct" id="bp-ens-pct">50%</span>
+            <span class="dist-part-label">ens fordeling</span>
+            <span class="dist-part-kr" id="bp-ens-kr">1.500 kr ÷ 3 = 500 kr/skole</span>
+          </div>
+          <div class="dist-part var">
+            <span class="dist-part-pct" id="bp-var-pct">50%</span>
+            <span class="dist-part-label">pr. elevtal</span>
+            <span class="dist-part-kr" id="bp-var-kr">1.500 kr fordelt</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="sim-btn" onclick="openSimulation()">
+        Simuler et skoleår 2026/2027 →
+      </button>
+    </div>
+
+    <!-- RIGHT: results -->
+    <div class="right-panel">
+      <!-- cards -->
+      <div class="cards">
+        <div class="card">
+          <div class="card-label">Total elever</div>
+          <div class="card-value" id="c-total-elev">60</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Total indtægt</div>
+          <div class="card-value" id="c-total-ind">6.000 kr</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Bustomkostning</div>
+          <div class="card-value" id="c-total-bus">3.000 kr</div>
+        </div>
+        <div class="card balance">
+          <div class="card-label">Samlet balance</div>
+          <div class="card-value" id="c-balance">3.000 kr</div>
+        </div>
+      </div>
+
+      <!-- marimekko rectangle -->
+      <div class="table-card" style="margin-bottom:24px">
+        <h3>Udgiftsfordeling</h3>
+        <div style="padding:16px 20px 20px">
+          <div class="mm-outer" id="marimekko-inner"></div>
+        </div>
+      </div>
+
+      <!-- charts -->
+      <div class="charts-row">
+        <div class="chart-card">
+          <h3>Elevfordeling</h3>
+          <div class="chart-wrap bar" style="height:200px">
+            <canvas id="pie-chart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card" style="grid-column: span 1">
+          <h3>Økonomi pr. skole</h3>
+          <div class="chart-subtitle" id="bar-subtitle"></div>
+          <div class="chart-wrap bar">
+            <canvas id="bar-chart"></canvas>
+          </div>
+          <div class="bar-netto" id="bar-netto"></div>
+        </div>
+      </div>
+
+      <!-- table -->
+      <div class="table-card">
+        <h3>Resultat pr. skole</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Skole</th>
+              <th>Elever</th>
+              <th>Andel</th>
+              <th>Betaling</th>
+              <th>Indtægt</th>
+              <th>Netto</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-body"></tbody>
+          <tfoot id="tbl-foot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+  </div><!-- /view-main -->
+
+  <!-- ── SCHOOL PAGES ──────────────────────────────── -->
+  <div id="view-school-0" class="app-view">
+    <div class="school-page-content">
+      <div class="school-page-header">
+        <div class="school-page-dot" id="sp-dot-0"></div>
+        <div>
+          <div class="school-page-name" id="sp-name-0"></div>
+          <div class="school-page-sub">Turregnskab – isoleret visning for denne skole</div>
+        </div>
+      </div>
+      <div id="sp-body-0"></div>
+    </div>
+  </div>
+
+  <div id="view-school-1" class="app-view">
+    <div class="school-page-content">
+      <div class="school-page-header">
+        <div class="school-page-dot" id="sp-dot-1"></div>
+        <div>
+          <div class="school-page-name" id="sp-name-1"></div>
+          <div class="school-page-sub">Turregnskab – isoleret visning for denne skole</div>
+        </div>
+      </div>
+      <div id="sp-body-1"></div>
+    </div>
+  </div>
+
+  <div id="view-school-2" class="app-view">
+    <div class="school-page-content">
+      <div class="school-page-header">
+        <div class="school-page-dot" id="sp-dot-2"></div>
+        <div>
+          <div class="school-page-name" id="sp-name-2"></div>
+          <div class="school-page-sub">Turregnskab – isoleret visning for denne skole</div>
+        </div>
+      </div>
+      <div id="sp-body-2"></div>
+    </div>
+  </div>
+
+  <!-- ── SIMULATION PAGE ───────────────────────────── -->
+  <div id="view-simulation" class="app-view">
+    <div class="sim-content" id="sim-content"></div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ── SCHOOL MODAL ─────────────────────────────── -->
+<div id="school-modal">
+  <div class="modal-backdrop" onclick="closeModal()"></div>
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-school-dot" id="modal-dot"></div>
+      <div>
+        <div class="modal-school-name" id="modal-school-name"></div>
+        <div class="modal-sub">Turregnskab – isoleret visning for denne skole</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+  // ── STATE ─────────────────────────────────────────
+  let _schools = [];
+  let _params  = { busCost: 3000, elevPrice: 100, commonPct: 50, varPct: 50 };
+  let _simYear = null; // set after buildSimulation() runs
+
+  // ── AUTH ─────────────────────────────────────────
+  const PASS = 'bus2026';
+
+  function doLogin() {
+    const val = document.getElementById('pw-input').value;
+    if (val === PASS) {
+      document.getElementById('login-overlay').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      recalc();
+    } else {
+      const box = document.getElementById('login-box');
+      const err = document.getElementById('login-error');
+      err.textContent = 'Forkert adgangskode. Prøv igen.';
+      box.classList.remove('shake');
+      void box.offsetWidth; // reflow to restart animation
+      box.classList.add('shake');
+      document.getElementById('pw-input').value = '';
+      document.getElementById('pw-input').focus();
+    }
+  }
+
+  function doLogout() {
+    document.getElementById('login-overlay').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('pw-input').value = '';
+    document.getElementById('login-error').textContent = '';
+  }
+
+  // allow Enter key on password field
+  document.getElementById('pw-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+
+  // ── CHARTS ───────────────────────────────────────
+  Chart.register(ChartDataLabels);
+
+  const COLORS = ['#3b82f6', '#f97316', '#10b981'];
+  const COLORS_ALPHA = ['rgba(59,130,246,0.15)', 'rgba(249,115,22,0.15)', 'rgba(16,185,129,0.15)'];
+
+  const barCtx = document.getElementById('bar-chart').getContext('2d');
+  const pieCtx = document.getElementById('pie-chart').getContext('2d');
+
+  const barChart = new Chart(barCtx, {
+    type: 'bar',
+    data: {
+      labels: ['Skole A', 'Skole B', 'Skole C'],
+      datasets: [
+        {
+          label: 'Betaling (bus)',
+          data: [0, 0, 0],
+          backgroundColor: COLORS.map(c => c + 'cc'),
+          borderColor: COLORS,
+          borderWidth: 2,
+          borderRadius: 5,
+        },
+        {
+          label: 'Indtægt (elever)',
+          data: [0, 0, 0],
+          backgroundColor: COLORS.map(c => c + '44'),
+          borderColor: COLORS,
+          borderWidth: 2,
+          borderDash: [4, 3],
+          borderRadius: 5,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        datalabels: { display: false },
+        legend: {
+          position: 'top',
+          labels: { font: { size: 12 }, boxWidth: 12 }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const i = ctx.dataIndex;
+              if (ctx.datasetIndex === 0 && _schools[i]) {
+                const s = _schools[i];
+                return [
+                  ` Busandel i alt: ${fmt(s.payment)}`,
+                  `   heraf ens del: ${fmt(s.ensShare)}`,
+                  `   heraf elevbaseret: ${fmt(s.varShare)}`,
+                ];
+              }
+              return ` ${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: v => fmt(v),
+            font: { size: 11 }
+          },
+          grid: { color: '#f1f5f9' }
+        },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  const pieChart = new Chart(pieCtx, {
+    type: 'bar',
+    data: {
+      labels: [
+        ['Højer Efterskole', '10 elever'],
+        ['Højer Designefterskole', '20 elever'],
+        ['Emmerske Efterskole', '5 elever'],
+      ],
+      datasets: [{
+        label: 'Elever',
+        data: [10, 20, 5],
+        backgroundColor: COLORS.map(c => c + 'cc'),
+        borderColor: COLORS,
+        borderWidth: 2,
+        borderRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.parsed.y} elever`
+          }
+        },
+        datalabels: {
+          anchor: 'end',
+          align: 'top',
+          color: '#1e293b',
+          font: { weight: 'bold', size: 13 },
+          formatter: v => v + ' elever',
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { font: { size: 11 }, stepSize: 5 },
+          grid: { color: '#f1f5f9' },
+        },
+        x: { grid: { display: false } }
+      },
+      layout: { padding: { top: 30 } }
+    }
+  });
+
+  // ── HELPERS ──────────────────────────────────────
+  function fmt(n) {
+    if (isNaN(n)) return '0 kr';
+    return Math.round(n).toLocaleString('da-DK') + ' kr';
+  }
+
+  function pct(part, total) {
+    if (!total) return '0%';
+    return (part / total * 100).toFixed(1) + '%';
+  }
+
+  function getInt(id) {
+    return Math.max(0, parseInt(document.getElementById(id).value) || 0);
+  }
+
+  // ── RECALC ───────────────────────────────────────
+  function recalc() {
+    const nameA = document.getElementById('name-a').value || 'Højer Efterskole';
+    const nameB = document.getElementById('name-b').value || 'Højer Designefterskole';
+    const nameC = document.getElementById('name-c').value || 'Emmerske Efterskole';
+
+    // update nav labels
+    document.getElementById('nav-name-0').textContent = nameA;
+    document.getElementById('nav-name-1').textContent = nameB;
+    document.getElementById('nav-name-2').textContent = nameC;
+
+    const elevA = getInt('elev-a');
+    const elevB = getInt('elev-b');
+    const elevC = getInt('elev-c');
+    const total = elevA + elevB + elevC;
+
+    const busCost     = parseInt(document.getElementById('s-bus').value);
+    const elevPrice   = parseInt(document.getElementById('s-elev').value);
+    const commonPct   = parseInt(document.getElementById('s-fordel').value);
+    const varPct      = 100 - commonPct;
+
+    // update slider display
+    document.getElementById('val-elev-a').textContent = elevA + ' elever';
+    document.getElementById('val-elev-b').textContent = elevB + ' elever';
+    document.getElementById('val-elev-c').textContent = elevC + ' elever';
+    document.getElementById('val-bus').textContent    = fmt(busCost);
+    document.getElementById('val-elev').textContent   = elevPrice + ' kr';
+
+    // distribution breakdown
+    const ensKr = (commonPct / 100) * busCost;
+    const varKr = (varPct   / 100) * busCost;
+
+    document.getElementById('dist-common').style.width   = commonPct + '%';
+    document.getElementById('dist-variable').style.width = varPct + '%';
+
+    document.getElementById('bp-ens-pct').textContent = commonPct + '%';
+    document.getElementById('bp-var-pct').textContent = varPct + '%';
+    document.getElementById('bp-ens-kr').textContent  =
+      fmt(ensKr) + ' ÷ 3 = ' + fmt(ensKr / 3) + '/skole';
+    document.getElementById('bp-var-kr').textContent  =
+      fmt(varKr) + ' fordelt pr. elevtal';
+
+    // calc per school
+    const schools = [
+      { name: nameA, elev: elevA },
+      { name: nameB, elev: elevB },
+      { name: nameC, elev: elevC },
+    ];
+
+    const commonShare = (commonPct / 100) * busCost / 3;
+
+    schools.forEach(s => {
+      s.ensShare = commonShare;
+      s.varShare = total > 0 ? (varPct / 100) * busCost * (s.elev / total) : 0;
+      s.payment  = s.ensShare + s.varShare;
+      s.revenue  = elevPrice * s.elev;
+      s.net      = s.revenue - s.payment;
+      s.share    = total > 0 ? s.elev / total : 0;
+    });
+
+    const totalRevenue = schools.reduce((a, s) => a + s.revenue, 0);
+    const totalNet     = schools.reduce((a, s) => a + s.net, 0);
+
+    // save state for modal
+    _schools = schools;
+    _params  = { busCost, elevPrice, commonPct, varPct, ensKr, varKr, total };
+
+    // cards
+    document.getElementById('c-total-elev').textContent = total;
+    document.getElementById('c-total-ind').textContent  = fmt(totalRevenue);
+    document.getElementById('c-total-bus').textContent  = fmt(busCost);
+
+    const balEl = document.getElementById('c-balance');
+    balEl.textContent = fmt(totalNet);
+    balEl.className   = 'card-value ' + (totalNet >= 0 ? 'positive' : 'negative');
+
+    // bar chart subtitle — dynamic, with student counts
+    document.getElementById('bar-subtitle').innerHTML = `
+      <span class="legend-swatch solid"></span>
+      = skolens busandel (udgift)
+      &nbsp;&nbsp;
+      <span class="legend-swatch outline"></span>
+      = elevindtægt
+      <span style="color:var(--muted);font-style:italic">(${elevPrice} kr × elever:
+        ${schools.map(s => s.name.split(' ')[0] + '\u00a0' + s.elev).join(', ')})</span>
+    `;
+
+    barChart.data.labels               = schools.map(s => s.name);
+    barChart.data.datasets[0].data     = schools.map(s => Math.round(s.payment));
+    barChart.data.datasets[1].data     = schools.map(s => Math.round(s.revenue));
+    barChart.update('none');
+
+    // netto badges — include student count + link to narrative
+    document.getElementById('bar-netto').innerHTML = schools.map((s, i) => `
+      <div class="netto-badge ${s.net >= 0 ? 'pos' : 'neg'}">
+        <div class="nb-name">${s.name}</div>
+        <div class="nb-elev">${s.elev} elever · ${fmt(s.revenue)} ind.</div>
+        <div class="nb-val">${s.net >= 0 ? '+' : ''}${fmt(s.net)}</div>
+        <div class="nb-label">${s.net >= 0 ? 'overskud' : 'underskud'}</div>
+        <button class="open-modal-btn" onclick="openSchoolPage(${i})">Se skolens regnskab →</button>
+      </div>
+    `).join('');
+
+    // elevfordeling bar chart — multi-line labels with student count
+    pieChart.data.labels     = schools.map(s => [s.name, s.elev + ' elever']);
+    pieChart.data.datasets[0].data = schools.map(s => s.elev);
+    pieChart.update('none');
+
+    // table
+    const tbody = document.getElementById('tbl-body');
+    tbody.innerHTML = schools.map((s, i) => `
+      <tr>
+        <td><span class="school-dot" style="background:${COLORS[i]}"></span>${s.name}</td>
+        <td>${s.elev}</td>
+        <td>${pct(s.elev, total)}</td>
+        <td>${fmt(s.payment)}</td>
+        <td>${fmt(s.revenue)}</td>
+        <td class="${s.net >= 0 ? 'net-positive' : 'net-negative'}">${fmt(s.net)}</td>
+      </tr>
+    `).join('');
+
+    const tfoot = document.getElementById('tbl-foot');
+    tfoot.innerHTML = `
+      <tr>
+        <td>Total</td>
+        <td>${total}</td>
+        <td>100%</td>
+        <td>${fmt(busCost)}</td>
+        <td>${fmt(totalRevenue)}</td>
+        <td class="${totalNet >= 0 ? 'net-positive' : 'net-negative'}">${fmt(totalNet)}</td>
+      </tr>
+    `;
+
+    // ── marimekko rectangle ───────────────────────
+    const RECT_H   = 240;
+    const LABEL_W  = 140;
+    const SUM_W    = 90;
+
+    // row heights proportional to payment; if busCost=0 use equal thirds
+    let rH;
+    if (busCost === 0) {
+      rH = [Math.round(RECT_H/3), Math.round(RECT_H/3), RECT_H - 2*Math.round(RECT_H/3)];
+    } else {
+      const h0 = Math.round(schools[0].payment / busCost * RECT_H);
+      const h1 = Math.round(schools[1].payment / busCost * RECT_H);
+      rH = [h0, h1, RECT_H - h0 - h1];
+    }
+
+    // flex values for the two data columns
+    const fEns = commonPct || 0.01;
+    const fVar = varPct    || 0.01;
+
+    const showEns = commonPct > 0;
+    const showVar = varPct    > 0;
+
+    document.getElementById('marimekko-inner').innerHTML = `
+      <!-- column headers (above the box) -->
+      <div class="mm-header-row">
+        <div style="width:${LABEL_W}px;flex-shrink:0"></div>
+        <div style="flex:1;display:flex">
+          ${showEns ? `<div class="mm-col-head ens" style="flex:${fEns}">Ens del<br><span style="font-size:10px;font-weight:400">${commonPct}% · ${fmt(ensKr)}</span></div>` : ''}
+          ${showVar ? `<div class="mm-col-head var" style="flex:${fVar}">Pr. elevtal<br><span style="font-size:10px;font-weight:400">${varPct}% · ${fmt(varKr)}</span></div>` : ''}
+        </div>
+        <div style="width:${SUM_W}px;flex-shrink:0;margin-left:10px;padding-left:10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--muted);display:flex;align-items:flex-end;justify-content:flex-end">Total</div>
+      </div>
+      <!-- body: labels | [bordered rectangle] | sums -->
+      <div class="mm-body" style="height:${RECT_H}px">
+        <div class="mm-labels-col" style="width:${LABEL_W}px">
+          ${schools.map((s, i) => `<div class="mm-label" style="height:${rH[i]}px">${s.name}</div>`).join('')}
+        </div>
+        <div class="mm-rect-box">
+          ${showEns ? `
+          <div class="mm-data-col ens" style="flex:${fEns}">
+            ${schools.map((s, i) => `
+              <div class="mm-cell ens" style="height:${rH[i]}px">
+                ${rH[i] > 22 ? fmt(s.ensShare) : ''}
+              </div>
+            `).join('')}
+          </div>` : ''}
+          ${showVar ? `
+          <div class="mm-data-col var" style="flex:${fVar}">
+            ${schools.map((s, i) => `
+              <div class="mm-cell var c${i}" style="height:${rH[i]}px">
+                ${rH[i] > 22 ? fmt(s.varShare) : ''}
+              </div>
+            `).join('')}
+          </div>` : ''}
+        </div>
+        <div class="mm-sums-col" style="width:${SUM_W}px">
+          ${schools.map((s, i) => `<div class="mm-row-sum" style="height:${rH[i]}px">${fmt(s.payment)}</div>`).join('')}
+        </div>
+      </div>
+      <!-- column totals (below the box) -->
+      <div class="mm-footer-row">
+        <div style="width:${LABEL_W}px;flex-shrink:0"></div>
+        <div style="flex:1;display:flex">
+          ${showEns ? `<div class="mm-col-sum ens" style="flex:${fEns}">${fmt(ensKr)}</div>` : ''}
+          ${showVar ? `<div class="mm-col-sum var" style="flex:${fVar}">${fmt(varKr)}</div>` : ''}
+        </div>
+        <div class="mm-total-sum" style="width:${SUM_W}px;margin-left:10px;padding-left:10px">${fmt(busCost)}</div>
+      </div>
+    `;
+  }
+
+  // ── VIEW SWITCHING ───────────────────────────────
+  function showView(id) {
+    document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + id).classList.add('active');
+    window.scrollTo(0, 0);
+
+    // highlight correct nav button
+    const map = { 'main': 'nav-forside', 'simulation': 'nav-skolear',
+                  'school-0': 'nav-school-0', 'school-1': 'nav-school-1', 'school-2': 'nav-school-2' };
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('nav-active'));
+    const target = map[id];
+    if (target) document.getElementById(target).classList.add('nav-active');
+  }
+
+  // ── SCHOOL PAGES ─────────────────────────────────
+  function schoolNarrativeHTML(s, p) {
+    const sharePct = p.total > 0 ? (s.elev / p.total * 100).toFixed(1) : '0';
+    const perElev  = s.elev > 0 ? Math.round(s.payment / s.elev) : 0;
+    const netPos   = s.net >= 0;
+    return `
+      <div class="narr-section">
+        <div class="narr-section-title">Bussen</div>
+        <p class="narr-text">Den samlede buspris for turen er <strong>${fmt(p.busCost)}</strong>.
+        Udgiften deles mellem de tre skoler efter fordelingsnøglen
+        (<strong>${p.commonPct}% ens</strong> + <strong>${p.varPct}% efter elevtal</strong>).</p>
+      </div>
+      <div class="narr-section">
+        <div class="narr-section-title">Vores elever på turen</div>
+        <p class="narr-text"><strong>${s.name}</strong> har <strong>${s.elev} elever</strong> med.
+        Det svarer til <strong>${sharePct}%</strong> af de <strong>${p.total} elever</strong> i alt.</p>
+      </div>
+      <div class="narr-section">
+        <div class="narr-section-title">Vores andel af udgiften</div>
+        <p class="narr-text" style="margin-bottom:10px">Fordelingsnøglen giver to dele:</p>
+        <div class="narr-calc">
+          <div class="narr-calc-row ens-row">
+            <span class="calc-label">Fælles del — ${p.commonPct}% af ${fmt(p.busCost)} = ${fmt(p.ensKr)}, delt ligeligt</span>
+            <span class="calc-val">${fmt(s.ensShare)}</span>
+          </div>
+          <div class="narr-calc-row var-row">
+            <span class="calc-label">Elevbaseret del — ${p.varPct}% af ${fmt(p.busCost)} = ${fmt(p.varKr)}, vores ${sharePct}%</span>
+            <span class="calc-val">${fmt(s.varShare)}</span>
+          </div>
+          <div class="narr-calc-row total-row">
+            <span class="calc-label">Samlet betaling til bussen</span>
+            <span class="calc-val">${fmt(s.payment)}</span>
+          </div>
+          <div class="narr-calc-row" style="background:#f8fafc">
+            <span class="calc-label" style="font-style:italic">Pris pr. elev (busandel)</span>
+            <span class="calc-val" style="color:var(--muted)">${s.elev > 0 ? fmt(perElev) + '/elev' : '–'}</span>
+          </div>
+        </div>
+      </div>
+      <div class="narr-section">
+        <div class="narr-section-title">Vores elevindtægt</div>
+        <p class="narr-text">Vi opkræver <strong>${p.elevPrice} kr pr. elev</strong> × ${s.elev} elever = <strong>${fmt(s.revenue)}</strong>.</p>
+      </div>
+      <div class="narr-section">
+        <div class="narr-section-title">Resultat for ${s.name}</div>
+        <div class="narr-result-box">
+          <div class="narr-result-row">
+            <span class="res-label">Betaling til bussen</span>
+            <span class="res-neg">−${fmt(s.payment)}</span>
+          </div>
+          <div class="narr-result-row">
+            <span class="res-label">Elevindtægt (${s.elev} × ${p.elevPrice} kr)</span>
+            <span class="res-pos">+${fmt(s.revenue)}</span>
+          </div>
+          <div class="narr-result-row result-total">
+            <span class="res-label">Netto</span>
+            <span class="${netPos ? 'res-pos' : 'res-neg'}">${netPos ? '+' : ''}${fmt(s.net)} ${netPos ? 'overskud' : 'underskud'}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function openSchoolPage(i) {
+    const s = _schools[i];
+    const p = _params;
+    if (!s) return;
+    document.getElementById('sp-dot-' + i).style.background = COLORS[i];
+    document.getElementById('sp-name-' + i).textContent     = s.name;
+    document.getElementById('sp-body-' + i).innerHTML       =
+      schoolNarrativeHTML(s, p) + schoolYearNarrativeHTML(i);
+    showView('school-' + i);
+  }
+
+  function schoolYearNarrativeHTML(i) {
+    if (!_simYear) return `
+      <div class="narr-section" style="margin-top:32px;border-top:2px solid var(--border);padding-top:24px">
+        <div class="narr-section-title">Skoleår 2026/27 – årsregnskab</div>
+        <p class="narr-text" style="color:var(--muted);font-style:italic">
+          Årsregnskabet kræver, at du først åbner
+          <strong>Skoleår 2026/27</strong> i menuen for at køre simuleringen.
+        </p>
+      </div>`;
+
+    const sim = _simYear;
+    const ss  = sim.schools[i];
+    const netPos = ss.yNet >= 0;
+    const sharePct = sim.yearCost > 0
+      ? (ss.yPayment / sim.yearCost * 100).toFixed(1) : '0';
+
+    return `
+      <div class="narr-section" style="margin-top:32px;border-top:2px solid var(--border);padding-top:24px">
+        <div class="narr-section-title">Skoleår 2026/27 – årsregnskab (simuleret)</div>
+        <p class="narr-text">
+          Simuleringen dækker <strong>${sim.tripCount} ture</strong> i skoleåret aug 2026 – jun 2027.
+          Elevtallet varierede fra tur til tur; ${ss.zeroTrips > 0
+            ? `<strong>${ss.zeroTrips} tur${ss.zeroTrips > 1 ? 'e' : ''}</strong> havde ${ss.name.split(' ')[0]} ingen elever med.`
+            : `${ss.name.split(' ')[0]} havde elever med på alle ture.`}
+          I gennemsnit deltog <strong>${ss.avgStudents} elever</strong> pr. tur.
+        </p>
+      </div>
+      <div class="narr-section">
+        <div class="narr-section-title">Årets udgifter og indtægter</div>
+        <div class="narr-calc">
+          <div class="narr-calc-row" style="background:#fafbfc">
+            <span class="calc-label">Antal ture i skoleåret</span>
+            <span class="calc-val">${sim.tripCount} ture</span>
+          </div>
+          <div class="narr-calc-row" style="background:#fafbfc">
+            <span class="calc-label">Gns. elever pr. tur (${ss.name.split(' ')[0]})</span>
+            <span class="calc-val">${ss.avgStudents} elever</span>
+          </div>
+          <div class="narr-calc-row ens-row">
+            <span class="calc-label">Samlet busandel betalt</span>
+            <span class="calc-val">${fmt(ss.yPayment)}</span>
+          </div>
+          <div class="narr-calc-row var-row">
+            <span class="calc-label">Samlet elevindtægt</span>
+            <span class="calc-val">${fmt(ss.yRevenue)}</span>
+          </div>
+          <div class="narr-calc-row total-row">
+            <span class="calc-label">Årets netto</span>
+            <span class="calc-val ${netPos ? 'res-pos' : 'res-neg'}">${netPos ? '+' : ''}${fmt(ss.yNet)}</span>
+          </div>
+        </div>
+      </div>
+      <div class="narr-section">
+        <div class="narr-section-title">Årsresultat</div>
+        <div class="narr-result-box">
+          <div class="narr-result-row">
+            <span class="res-label">Betaling til bussen (hele året)</span>
+            <span class="res-neg">−${fmt(ss.yPayment)}</span>
+          </div>
+          <div class="narr-result-row">
+            <span class="res-label">Elevindtægt (hele året)</span>
+            <span class="res-pos">+${fmt(ss.yRevenue)}</span>
+          </div>
+          <div class="narr-result-row result-total">
+            <span class="res-label">Årets netto</span>
+            <span class="${netPos ? 'res-pos' : 'res-neg'}">${netPos ? '+' : ''}${fmt(ss.yNet)} ${netPos ? 'overskud' : 'underskud'}</span>
+          </div>
+        </div>
+        <p class="narr-text" style="margin-top:10px;font-size:13px;color:var(--muted)">
+          Skolen dækkede <strong>${sharePct}%</strong> af den samlede buspris på ${fmt(sim.yearCost)}.
+          Tallene er baseret på den seneste simulering — tryk "Ny simulering" for nye tilfældige elevtal.
+        </p>
+      </div>
+    `;
+  }
+
+  // ── HOLIDAYS ─────────────────────────────────────
+  const HOLIDAYS = [
+    { s: '2026-08-01', e: '2026-08-09', n: 'Sommerferie (slut)' },
+    { s: '2026-10-10', e: '2026-10-18', n: 'Efterårsferie' },
+    { s: '2026-12-19', e: '2027-01-03', n: 'Juleferie' },
+    { s: '2027-02-20', e: '2027-02-28', n: 'Vinterferie' },
+    { s: '2027-03-21', e: '2027-04-01', n: 'Påskeferie' },
+    { s: '2027-05-06', e: '2027-05-06', n: 'Kristi Himmelfartsdag' },
+    { s: '2027-05-15', e: '2027-05-17', n: 'Pinse' },
+    { s: '2027-06-05', e: '2027-06-05', n: 'Grundlovsdag' },
+    { s: '2027-06-25', e: '2027-06-30', n: 'Sommerferie (start)' },
+  ].map(h => ({ s: new Date(h.s), e: new Date(h.e), n: h.n }));
+
+  function getHolidayName(d) {
+    for (const h of HOLIDAYS) { if (d >= h.s && d <= h.e) return h.n; }
+    return null;
+  }
+
+  function generateTrips() {
+    const start = new Date('2026-08-10');
+    const end   = new Date('2027-06-26');
+    const trips = [], excluded = [];
+    const d = new Date(start);
+    while (d <= end) {
+      const dow = d.getDay();
+      if (dow === 5 || dow === 0) {
+        const holiday = getHolidayName(d);
+        const entry   = { date: new Date(d), day: dow === 5 ? 'Fredag' : 'Søndag' };
+        if (holiday) excluded.push({ ...entry, holiday });
+        else         trips.push(entry);
+      }
+      d.setDate(d.getDate() + 1);
+    }
+    return { trips, excluded };
+  }
+
+  // ── SIMULATION ───────────────────────────────────
+  function openSimulation() {
+    buildSimulation();
+    showView('simulation');
+  }
+
+  // Returns a randomized student count for one trip.
+  // ~5% chance of 0 (school stays home). Otherwise varies ±50%/+25% around base.
+  function randomizeTripStudents(base) {
+    if (base === 0) return 0;
+    if (Math.random() < 0.05) return 0;
+    const min = Math.ceil(base * 0.5);
+    const max = Math.ceil(base * 1.25);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function buildSimulation() {
+    const { trips, excluded } = generateTrips();
+    const p = _params;
+    const schools = _schools;
+
+    // Assign randomized student counts and calculate costs per trip
+    const tripData = trips.map(t => {
+      const students = schools.map(s => randomizeTripStudents(s.elev));
+      const tripTotal = students.reduce((a, b) => a + b, 0);
+      const commonShare = (p.commonPct / 100) * p.busCost / 3;
+      const schoolData = schools.map((s, i) => {
+        const n = students[i];
+        const varShare = tripTotal > 0
+          ? (p.varPct / 100) * p.busCost * (n / tripTotal)
+          : (p.varPct / 100) * p.busCost / 3;
+        const payment = commonShare + varShare;
+        const revenue = n * p.elevPrice;
+        return { students: n, payment, revenue, net: revenue - payment };
+      });
+      return { ...t, students, tripTotal, schoolData };
+    });
+
+    const tripCount = tripData.length;
+    const yearCost  = p.busCost * tripCount;
+
+    // Year totals per school
+    const schoolYear = schools.map((s, i) => ({
+      ...s,
+      yStudents: tripData.reduce((a, t) => a + t.schoolData[i].students, 0),
+      yPayment:  Math.round(tripData.reduce((a, t) => a + t.schoolData[i].payment, 0)),
+      yRevenue:  Math.round(tripData.reduce((a, t) => a + t.schoolData[i].revenue, 0)),
+      yNet:      Math.round(tripData.reduce((a, t) => a + t.schoolData[i].net, 0)),
+    }));
+    const yearRevenue = schoolYear.reduce((a, s) => a + s.yRevenue, 0);
+    const yearNet     = yearRevenue - yearCost;
+
+    // Count friday/sunday totals
+    const totFriAll = tripData.filter(t => t.day === 'Fredag').length;
+    const totSunAll = tripData.filter(t => t.day === 'Søndag').length;
+
+    // Group trips by month
+    const monthMap = new Map();
+    for (const t of tripData) {
+      const key = t.date.toLocaleDateString('da-DK', { year: 'numeric', month: 'long' });
+      if (!monthMap.has(key)) monthMap.set(key, []);
+      monthMap.get(key).push(t);
+    }
+
+    // Summary cards
+    const cardHTML = `
+      <div class="sim-cards">
+        <div class="sim-card">
+          <div class="sc-label">Antal ture</div>
+          <div class="sc-val">${tripCount}</div>
+          <div class="sc-sub">${totFriAll} fredage · ${totSunAll} søndage</div>
+        </div>
+        <div class="sim-card">
+          <div class="sc-label">Total buspris</div>
+          <div class="sc-val">${fmt(yearCost)}</div>
+          <div class="sc-sub">${tripCount} × ${fmt(p.busCost)}</div>
+        </div>
+        <div class="sim-card">
+          <div class="sc-label">Total elevindtægt</div>
+          <div class="sc-val">${fmt(yearRevenue)}</div>
+          <div class="sc-sub">alle skoler samlet</div>
+        </div>
+        <div class="sim-card">
+          <div class="sc-label">Samlet netto</div>
+          <div class="sc-val ${yearNet >= 0 ? 'sim-net-pos' : 'sim-net-neg'}">${yearNet >= 0 ? '+' : ''}${fmt(yearNet)}</div>
+          <div class="sc-sub">alle skoler samlet</div>
+        </div>
+      </div>
+    `;
+
+    // Per-school summary cards
+    const schoolCardHTML = schoolYear.map((s, i) => `
+      <div class="sim-card">
+        <div class="sc-label" style="display:flex;align-items:center;gap:6px">
+          <span style="width:8px;height:8px;border-radius:50%;background:${COLORS[i]};display:inline-block"></span>
+          ${s.name}
+        </div>
+        <div class="sc-val">${fmt(s.yPayment)}</div>
+        <div class="sc-sub">${s.yStudents} elever · netto <span class="${s.yNet >= 0 ? 'sim-net-pos' : 'sim-net-neg'}">${s.yNet >= 0 ? '+' : ''}${fmt(s.yNet)}</span></div>
+      </div>
+    `).join('');
+
+    // Monthly table with expandable detail rows
+    let tbodyHTML = '';
+    let monthIdx = 0;
+    for (const [monthName, mTrips] of monthMap) {
+      const gid = 'mg' + monthIdx++;
+      const fri = mTrips.filter(t => t.day === 'Fredag').length;
+      const sun = mTrips.filter(t => t.day === 'Søndag').length;
+      const mCost = p.busCost * mTrips.length;
+
+      // Monthly aggregates per school
+      const mSchool = schools.map((s, i) => ({
+        students: mTrips.reduce((a, t) => a + t.schoolData[i].students, 0),
+        payment:  mTrips.reduce((a, t) => a + t.schoolData[i].payment, 0),
+        net:      mTrips.reduce((a, t) => a + t.schoolData[i].net, 0),
+      }));
+
+      tbodyHTML += `
+        <tr class="month-summary-row" onclick="toggleMonth('${gid}',this)">
+          <td><span class="expand-icon">▶</span> ${monthName}</td>
+          <td>${mTrips.length} <span style="color:var(--muted);font-size:11px">(${fri} fr · ${sun} sø)</span></td>
+          <td>${fmt(mCost)}</td>
+          ${mSchool.map(ms => `
+            <td>${ms.students}</td>
+            <td>${fmt(Math.round(ms.payment))}</td>
+            <td class="${Math.round(ms.net) >= 0 ? 'sim-net-pos' : 'sim-net-neg'}">${Math.round(ms.net) >= 0 ? '+' : ''}${fmt(Math.round(ms.net))}</td>
+          `).join('')}
+        </tr>`;
+
+      // Detail rows per trip
+      for (const trip of mTrips) {
+        const dateStr = trip.date.toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short' });
+        tbodyHTML += `
+          <tr class="trip-detail-row" data-group="${gid}" style="display:none">
+            <td>${dateStr}</td>
+            <td>${trip.day}</td>
+            <td>${fmt(p.busCost)}</td>
+            ${trip.schoolData.map(sd => `
+              <td>${sd.students === 0 ? '<span style="color:var(--muted)">–</span>' : sd.students}</td>
+              <td>${fmt(Math.round(sd.payment))}</td>
+              <td class="${sd.net >= 0 ? 'sim-net-pos' : 'sim-net-neg'}">${sd.net >= 0 ? '+' : ''}${fmt(Math.round(sd.net))}</td>
+            `).join('')}
+          </tr>`;
+      }
+    }
+
+    const theadSchools = schoolYear.map((s, i) => `
+      <th colspan="3" style="border-left:2px solid var(--border)">
+        <span style="display:flex;align-items:center;gap:4px;justify-content:center">
+          <span style="width:8px;height:8px;border-radius:50%;background:${COLORS[i]};display:inline-block"></span>
+          ${s.name}
+        </span>
+      </th>
+    `).join('');
+
+    const theadSub = schoolYear.map(() => `
+      <th style="border-left:2px solid var(--border)">Elever</th>
+      <th>Betaling</th>
+      <th>Netto</th>
+    `).join('');
+
+    const tfootHTML = `
+      <tr>
+        <td>Total</td>
+        <td>${tripCount} <span style="color:var(--muted);font-size:11px">(${totFriAll} fr · ${totSunAll} sø)</span></td>
+        <td>${fmt(yearCost)}</td>
+        ${schoolYear.map(s => `
+          <td>${s.yStudents}</td>
+          <td>${fmt(s.yPayment)}</td>
+          <td class="${s.yNet >= 0 ? 'sim-net-pos' : 'sim-net-neg'}">${s.yNet >= 0 ? '+' : ''}${fmt(s.yNet)}</td>
+        `).join('')}
+      </tr>
+    `;
+
+    // Excluded trips grouped by holiday
+    const holidayGroups = {};
+    for (const e of excluded) {
+      if (!holidayGroups[e.holiday]) holidayGroups[e.holiday] = [];
+      holidayGroups[e.holiday].push(e);
+    }
+    const chipHTML = Object.entries(holidayGroups).map(([name, hTrips]) =>
+      `<span class="holiday-chip">${name} — ${hTrips.length} tur${hTrips.length > 1 ? 'e' : ''} sprunget over</span>`
+    ).join('');
+
+    // Save simulation results for school pages
+    _simYear = {
+      tripCount,
+      yearCost,
+      yearRevenue,
+      yearNet,
+      schools: schoolYear.map((s, i) => ({
+        ...s,
+        zeroTrips: tripData.filter(t => t.schoolData[i].students === 0).length,
+        avgStudents: +(tripData.reduce((a, t) => a + t.schoolData[i].students, 0) / tripCount).toFixed(1),
+      })),
+    };
+
+    document.getElementById('sim-content').innerHTML = `
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px">
+        <div class="sim-params-bar" style="margin-bottom:0;flex:1;min-width:0">
+          <span>Buspris: <strong>${fmt(p.busCost)}/tur</strong></span>
+          <span>Pris pr. elev: <strong>${p.elevPrice} kr</strong></span>
+          <span>Fordelingsnøgle: <strong>${p.commonPct}% ens / ${p.varPct}% pr. elevtal</strong></span>
+          <span>Forventet elevtal: <strong>${schoolYear.map(s => s.name.split(' ')[0] + '\u00a0' + s.elev).join(' · ')}</strong></span>
+        </div>
+        <button class="resim-btn" onclick="buildSimulation()">↺ Ny simulering</button>
+      </div>
+
+      <div class="sim-section-title">Årssammenfatning</div>
+      ${cardHTML}
+
+      <div class="sim-cards">${schoolCardHTML}</div>
+
+      <div class="sim-section-title">Månedsoversigt <span style="font-weight:400;text-transform:none;font-size:12px;color:var(--muted)">(elevtal pr. tur varierer ±50%/+25% fra forventet)</span></div>
+      <div class="sim-table-wrap">
+        <table class="sim-table">
+          <thead>
+            <tr>
+              <th rowspan="2">Måned</th>
+              <th rowspan="2">Ture</th>
+              <th rowspan="2">Buspris</th>
+              ${theadSchools}
+            </tr>
+            <tr>${theadSub}</tr>
+          </thead>
+          <tbody>${tbodyHTML}</tbody>
+          <tfoot>${tfootHTML}</tfoot>
+        </table>
+      </div>
+
+      <div class="sim-section-title">Ferier og fridage (${excluded.length} ture sprunget over)</div>
+      <div class="holiday-list">${chipHTML}</div>
+    `;
+  }
+
+  function toggleMonth(gid, summaryRow) {
+    const rows = document.querySelectorAll(`.trip-detail-row[data-group="${gid}"]`);
+    const open = rows.length > 0 && rows[0].style.display !== 'none';
+    rows.forEach(r => r.style.display = open ? 'none' : 'table-row');
+    const icon = summaryRow.querySelector('.expand-icon');
+    if (icon) icon.textContent = open ? '▶' : '▼';
+  }
+
+  // ── SCHOOL MODAL ─────────────────────────────────
+  function openSchoolModal(i) {
+    const s = _schools[i];
+    const p = _params;
+    if (!s) return;
+
+    const sharePct = p.total > 0 ? (s.elev / p.total * 100).toFixed(1) : '0';
+    const perElev  = s.elev > 0 ? Math.round(s.payment / s.elev) : 0;
+    const netPos   = s.net >= 0;
+
+    document.getElementById('modal-dot').style.background = COLORS[i];
+    document.getElementById('modal-school-name').textContent = s.name;
+
+    document.getElementById('modal-body').innerHTML = `
+      <div class="narr-section">
+        <div class="narr-section-title">Bussen</div>
+        <p class="narr-text">
+          Den samlede buspris for turen er <strong>${fmt(p.busCost)}</strong>.
+          Denne udgift deles mellem de tre skoler efter den aftalte fordelingsnøgle
+          (<strong>${p.commonPct}% ens</strong> + <strong>${p.varPct}% efter elevtal</strong>).
+        </p>
+      </div>
+
+      <div class="narr-section">
+        <div class="narr-section-title">Vores elever på turen</div>
+        <p class="narr-text">
+          <strong>${s.name}</strong> har <strong>${s.elev} elever</strong> med på turen.
+          Det svarer til <strong>${sharePct}%</strong> af de <strong>${p.total} elever</strong> i alt
+          på tværs af de tre skoler.
+        </p>
+      </div>
+
+      <div class="narr-section">
+        <div class="narr-section-title">Vores andel af udgiften</div>
+        <p class="narr-text" style="margin-bottom:10px">
+          Fordelingsnøglen giver to dele:
+        </p>
+        <div class="narr-calc">
+          <div class="narr-calc-row ens-row">
+            <span class="calc-label">
+              Fælles del — ${p.commonPct}% af ${fmt(p.busCost)} = ${fmt(p.ensKr)}, delt ligeligt mellem 3 skoler
+            </span>
+            <span class="calc-val">${fmt(s.ensShare)}</span>
+          </div>
+          <div class="narr-calc-row var-row">
+            <span class="calc-label">
+              Elevbaseret del — ${p.varPct}% af ${fmt(p.busCost)} = ${fmt(p.varKr)},
+              fordelt efter vores ${sharePct}% af eleverne
+            </span>
+            <span class="calc-val">${fmt(s.varShare)}</span>
+          </div>
+          <div class="narr-calc-row total-row">
+            <span class="calc-label">Samlet betaling til bussen</span>
+            <span class="calc-val">${fmt(s.payment)}</span>
+          </div>
+          <div class="narr-calc-row" style="background:#f8fafc">
+            <span class="calc-label" style="font-style:italic">
+              Pris pr. elev (busandel alene)
+            </span>
+            <span class="calc-val" style="color:var(--muted)">${s.elev > 0 ? fmt(perElev) + '/elev' : '–'}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="narr-section">
+        <div class="narr-section-title">Vores elevindtægt</div>
+        <p class="narr-text">
+          Vi opkræver <strong>${p.elevPrice} kr pr. elev</strong> for turen.
+          Med <strong>${s.elev} elever</strong> giver det en samlet elevindtægt på <strong>${fmt(s.revenue)}</strong>.
+        </p>
+      </div>
+
+      <div class="narr-section">
+        <div class="narr-section-title">Resultat for ${s.name}</div>
+        <div class="narr-result-box">
+          <div class="narr-result-row">
+            <span class="res-label">Betaling til bussen</span>
+            <span class="res-neg">−${fmt(s.payment)}</span>
+          </div>
+          <div class="narr-result-row">
+            <span class="res-label">Elevindtægt (${s.elev} × ${p.elevPrice} kr)</span>
+            <span class="res-pos">+${fmt(s.revenue)}</span>
+          </div>
+          <div class="narr-result-row result-total">
+            <span class="res-label">Netto</span>
+            <span class="${netPos ? 'res-pos' : 'res-neg'}">${netPos ? '+' : ''}${fmt(s.net)} ${netPos ? 'overskud' : 'underskud'}</span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('school-modal').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('school-modal').style.display = 'none';
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+  });
+</script>
+</body>
+</html>
