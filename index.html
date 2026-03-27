@@ -1363,8 +1363,8 @@
         <div class="narr-section-title">Hvad er dette?</div>
         <p class="narr-text">
           Vi har lavet et digitalt værktøj, der gør det nemt at regne på, hvad fælles buskørsel
-          koster os hver især. Man logger ind med en kode, justerer tre skydere —
-          <strong>elevtal</strong>, <strong>buspris</strong> og <strong>fordelingsnøgle</strong> —
+          koster os hver især. Man logger ind med en kode, justerer tre skydere -
+          <strong>elevtal</strong>, <strong>buspris</strong> og <strong>fordelingsnøgle</strong> -
           og ser med det samme, hvad hver skole betaler og tjener på en tur.
         </p>
       </div>
@@ -1382,7 +1382,7 @@
         <div class="narr-section-title">Skoleregnskaberne</div>
         <p class="narr-text">
           Øverst i menuen er der en side pr. skole. Her gennemgås regnestykket i klart sprog:
-          hvad betaler vi, hvad tjener vi, og hvad er bundlinjen — både pr. tur og for hele
+          hvad betaler vi, hvad tjener vi, og hvad er bundlinjen - både pr. tur og for hele
           skoleåret.
         </p>
       </div>
@@ -1391,7 +1391,7 @@
         <div class="narr-section-title">Skoleårssimuleringen</div>
         <p class="narr-text">
           Under <strong>Skoleår 2026/27</strong> simuleres alle fredags- og søndagskørsler fra
-          august 2026 til juni 2027 — ferier og helligdage er automatisk sorteret fra. Elevtallet
+          august 2026 til juni 2027 - ferier og helligdage er automatisk sorteret fra. Elevtallet
           varierer realistisk fra tur til tur, og nogle få ture har en skole nul elever med.
           Tryk <strong>Ny simulering</strong> for at se et nyt scenarie.
         </p>
@@ -1401,7 +1401,7 @@
         <div class="narr-section-title">Adgang</div>
         <p class="narr-text">
           Siden kræver en adgangskode og virker i enhver browser på computer, tablet og mobil.
-          Ingen data sendes nogen steder — alt beregnes lokalt i browseren.
+          Ingen data sendes nogen steder - alt beregnes lokalt i browseren.
         </p>
       </div>
     </div>
@@ -1675,7 +1675,7 @@
     balEl.textContent = fmt(totalNet);
     balEl.className   = 'card-value ' + (totalNet >= 0 ? 'positive' : 'negative');
 
-    // bar chart subtitle — dynamic, with student counts
+    // bar chart subtitle - dynamic, with student counts
     document.getElementById('bar-subtitle').innerHTML = `
       <span class="legend-swatch solid"></span>
       = skolens busandel (udgift)
@@ -1691,7 +1691,7 @@
     barChart.data.datasets[1].data     = schools.map(s => Math.round(s.revenue));
     barChart.update('none');
 
-    // netto badges — include student count + link to narrative
+    // netto badges - include student count + link to narrative
     document.getElementById('bar-netto').innerHTML = schools.map((s, i) => `
       <div class="netto-badge ${s.net >= 0 ? 'pos' : 'neg'}">
         <div class="nb-name">${s.name}</div>
@@ -1702,7 +1702,7 @@
       </div>
     `).join('');
 
-    // elevfordeling bar chart — multi-line labels with student count
+    // elevfordeling bar chart - multi-line labels with student count
     pieChart.data.labels     = schools.map(s => [s.name, s.elev + ' elever']);
     pieChart.data.datasets[0].data = schools.map(s => s.elev);
     pieChart.update('none');
@@ -1840,11 +1840,11 @@
         <p class="narr-text" style="margin-bottom:10px">Fordelingsnøglen giver to dele:</p>
         <div class="narr-calc">
           <div class="narr-calc-row ens-row">
-            <span class="calc-label">Fælles del — ${p.commonPct}% af ${fmt(p.busCost)} = ${fmt(p.ensKr)}, delt ligeligt</span>
+            <span class="calc-label">Fælles del - ${p.commonPct}% af ${fmt(p.busCost)} = ${fmt(p.ensKr)}, delt ligeligt</span>
             <span class="calc-val">${fmt(s.ensShare)}</span>
           </div>
           <div class="narr-calc-row var-row">
-            <span class="calc-label">Elevbaseret del — ${p.varPct}% af ${fmt(p.busCost)} = ${fmt(p.varKr)}, vores ${sharePct}%</span>
+            <span class="calc-label">Elevbaseret del - ${p.varPct}% af ${fmt(p.busCost)} = ${fmt(p.varKr)}, vores ${sharePct}%</span>
             <span class="calc-val">${fmt(s.varShare)}</span>
           </div>
           <div class="narr-calc-row total-row">
@@ -1962,7 +1962,7 @@
         </div>
         <p class="narr-text" style="margin-top:10px;font-size:13px;color:var(--muted)">
           Skolen dækkede <strong>${sharePct}%</strong> af den samlede buspris på ${fmt(sim.yearCost)}.
-          Tallene er baseret på den seneste simulering — tryk "Ny simulering" for nye tilfældige elevtal.
+          Tallene er baseret på den seneste simulering - tryk "Ny simulering" for nye tilfældige elevtal.
         </p>
       </div>
     `;
@@ -2186,7 +2186,7 @@
       holidayGroups[e.holiday].push(e);
     }
     const chipHTML = Object.entries(holidayGroups).map(([name, hTrips]) =>
-      `<span class="holiday-chip">${name} — ${hTrips.length} tur${hTrips.length > 1 ? 'e' : ''} sprunget over</span>`
+      `<span class="holiday-chip">${name} - ${hTrips.length} tur${hTrips.length > 1 ? 'e' : ''} sprunget over</span>`
     ).join('');
 
     // Save simulation results for school pages
@@ -2288,13 +2288,13 @@
         <div class="narr-calc">
           <div class="narr-calc-row ens-row">
             <span class="calc-label">
-              Fælles del — ${p.commonPct}% af ${fmt(p.busCost)} = ${fmt(p.ensKr)}, delt ligeligt mellem 3 skoler
+              Fælles del - ${p.commonPct}% af ${fmt(p.busCost)} = ${fmt(p.ensKr)}, delt ligeligt mellem 3 skoler
             </span>
             <span class="calc-val">${fmt(s.ensShare)}</span>
           </div>
           <div class="narr-calc-row var-row">
             <span class="calc-label">
-              Elevbaseret del — ${p.varPct}% af ${fmt(p.busCost)} = ${fmt(p.varKr)},
+              Elevbaseret del - ${p.varPct}% af ${fmt(p.busCost)} = ${fmt(p.varKr)},
               fordelt efter vores ${sharePct}% af eleverne
             </span>
             <span class="calc-val">${fmt(s.varShare)}</span>
