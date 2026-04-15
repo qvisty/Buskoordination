@@ -2073,6 +2073,8 @@
 
   // ── SIMULATION ───────────────────────────────────
   function openSimulation() {
+    // Ensure simulation always uses the latest slider values
+    recalc();
     buildSimulation();
     showView('simulation');
   }
